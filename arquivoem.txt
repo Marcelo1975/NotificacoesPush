@@ -1,0 +1,169 @@
+###INDEX.HTML###
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ServiceWorker</title>
+	<script type="text/javascript" src="script.js"></script>
+</head>
+<body>
+	<h1>Meu Projeto</h1>
+
+</body>
+</html>
+###SCRIPT.JS###
+if('serviceWorker' in navigator) {
+
+	window.onload = function() {
+
+		navigator.serviceWorker.register('/projetosw/sw.js')
+			.then(function(){
+				console.log("ServiceWorker registrado com sucesso!");
+			},
+			function(e){
+				console.log("Erro ao registrar o serviceWorker: ");
+				console.log(e);
+			});
+
+		setTimeout(function(){
+			var img = new Image();
+			img.src = 'carro.jpg';
+			document.body.appendChild(img);
+		}, 3000);
+
+	};
+}
+###SW.JS###
+self.addEventListener('install', event => {
+	console.log("Evento de Install");
+	self.skipWaiting();
+
+	event.waitUntil(
+		caches.open('teste-v1').then(function(cache){
+			cache.add('moto.jpg');
+		})
+	);
+});
+
+self.addEventListener('activate', event => {
+
+	console.log("Evento de Activate");
+});
+
+self.addEventListener('fetch', event => {
+	var url = new URL( event.request.url );
+	/*
+	console.log("URL: "+event.request.url);
+	console.log("PATHNAME: "+url.pathname);
+	console.log("ORIGIN: "+url.origin);
+	*/
+
+	if(url.origin == location.origin && url.pathname == '/projetosw/carro.jpg') {
+		event.respondWith( caches.match('moto.jpg') );
+	}
+});
+###UNSUBSCRIBE###
+navigator.serviceWorker.ready
+	.then(function(reg){
+		reg.pushManager.getSubscription()
+			.then(function(subscription){
+				subscription.unsubscribe()
+					.then(function(){
+						console.log("Unsubscribe OK");
+					})
+					.catch(function(){
+						console.log("Unsubscribe FAIL");
+					});
+			})
+	});
+###ENDPOINT###
+{"endpoint":"https://fcm.googleapis.com/fcm/send/db20scqGzQk:APA91bH2qB5w2EyAOUYGybNKQaDL9Nu9MSt-cBbm3lGWBULut3oGvmAjNXPm7I0uIk9TvkXQvy_otjAVgNXDOGtPO6_6OYJkVPgkSu9ujSNAZlKlNhgdJcv7IC9-_bkzczTjLiOz_7wx","expirationTime":null,"keys":{"p256dh":"BNhd96f1-Zi4NCHL8WgxX5IotNZ3MBvvegs-cNcQ3tu_LUanIchFNDJep_O1-YfY6c8Ou3sfvD9JW0GHOXEe7qg","auth":"xmti7VdLiZT3hZjs_-3_Zg"}}
+###NOTIFICAÇÕES###
+self.addEventListener('install', event => {
+	console.log("Evento de Install");
+	self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+	console.log("Evento de Activate");
+});
+
+self.addEventListener('push', event => {
+	console.log("Evento de Push");
+	//console.log(event.data.text());
+
+	event.waitUntil(
+		self.registration.showNotification(
+			'Estudando Notificações',
+			{
+				body:event.data.text(),
+				icon:'icone.png',
+				requireInteraction:true,
+				data:{
+					id:'1',
+					url:'https://m18web.com.br'
+				},
+				actions:[
+					{title:"Arquivar", action:"arquivar"},
+					{title:"Marcar Como Lido", action:"marcar_lido"}
+				]
+			}
+		)
+	);
+});
+
+self.addEventListener('notificationclick', event => {
+	event.notification.close();
+
+	var id = event.notification.data.id;
+	if(event.action == 'arquivar') {
+		console.log("Clicou em arquivar "+id);
+	} else if(event.action == 'marcar_lido') {
+		console.log("Clicou em marcado como lido "+id);
+	} else {
+		clients.openWindow(event.notification.data.url);
+	}
+});
+###NOTIFICAÇÕES DINÂMICAS###
+self.addEventListener('install', event => {
+	console.log("Evento de Install");
+	self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+	console.log("Evento de Activate");
+});
+
+self.addEventListener('push', event => {
+	console.log("Evento de Push");
+	var data = JSON.parse(event.data.text());
+	//console.log(event.data.text());
+
+	event.waitUntil(
+		self.registration.showNotification(
+			data.titulo,
+			{
+				body:data.corpo,
+				icon:data.icon,
+				requireInteraction:true,
+				data:data,
+				actions:[
+					{title:"Arquivar", action:"arquivar"},
+					{title:"Marcar Como Lido", action:"marcar_lido"}
+				]
+			}
+		)
+	);
+});
+
+self.addEventListener('notificationclick', event => {
+	event.notification.close();
+
+	var id = event.notification.data.id;
+	if(event.action == 'arquivar') {
+		console.log("Clicou em arquivar "+id);
+	} else if(event.action == 'marcar_lido') {
+		console.log("Clicou em marcado como lido "+id);
+	} else {
+		clients.openWindow(event.notification.data.url);
+	}
+});
